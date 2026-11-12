@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InvestLab</title>
+  
+  <!-- Importando o Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* --- THÈME CLAIR ET MODERNE --- */
+    body {
+      background-color: #f3f4f6; /* Gris très clair, très moderne */
+      color: #1f2937;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    /* --- MENU DE NAVEGAÇÃO --- */
+    nav {
+      background-color: #ffffff;
+      padding: 15px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); /* Ombre douce */
+      margin-bottom: 30px;
+    }
+    nav h1 { margin: 0; color: #059669; font-size: 24px; font-weight: 800; }
+    nav p { margin: 0; color: #6b7280; font-size: 14px; font-weight: 500;}
+
+    /* --- LAYOUT --- */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+      display: flex;
+      gap: 25px;
+      flex-wrap: wrap;
+    }
+
+    /* --- FORMULAIRE --- */
+    .formulario {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 16px;
+      flex: 1;
+      min-width: 300px;
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+      height: fit-content;
+    }
+    .formulario h2 { color: #111827; margin-top: 0; font-size: 20px; margin-bottom: 20px;}
+    .campo { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #4b5563; }
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      background-color: #f9fafb;
+      color: #111827;
+      box-sizing: border-box;
+      font-size: 16px;
+      transition: 0.2s;
+    }
+    input:focus { border-color: #10b981; outline: none; background-color: #fff; }
+    
+    button {
+      width: 100%;
+      padding: 14px;
+      background-color: #10b981; /* Vert émeraude */
+      color: #ffffff;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 4px 6px -1px rgba(16,185,129,0.3);
+    }
+    button:hover { background-color: #059669; transform: translateY(-1px); }
+
+    /* --- ZONE DES RÉSULTATS --- */
+    .resultados {
+      flex: 2;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Cartes de résultat */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    .card {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      display: none; /* Caché au début */
+      border-top: 4px solid #10b981;
+    }
+    .card.investido { border-top-color: #6366f1; } /* Violet pour l'investi */
+    .card.juros { border-top-color: #f59e0b; grid-column: span 2; } /* Orange pour les juros */
+    
+    .card p { margin: 0 0 5px 0; font-size: 13px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;}
+    .card h3 { margin: 0; font-size: 24px; color: #111827; }
+
+    /* --- ZONE DES GRAPHIQUES (Côte à côte) --- */
+    .graficos-container {
+      display: none; /* Caché au début */
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .grafico-box {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      flex: 1;
+      min-width: 250px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <h1>💰 InvestLab</h1>
+    <p>Simulador Financeiro Inteligente</p>
+  </nav>
+
+  <div class="container">
+    
+    <!-- FORMULAIRE -->
+    <div class="formulario">
+      <h2>Faça sua simulação</h2>
+      
+      <div class="campo">
+        <label>Valor Inicial (R$)</label>
+        <input type="number" id="valorInicial" value="5000">
+      </div>
+
+      <div class="campo">
+        <label>Aporte Mensal (R$)</label>
+        <input type="number" id="aporteMensal" value="500">
+      </div>
+
+      <div class="campo">
+        <label>Período (Anos)</label>
+        <input type="number" id="periodo" value="20">
+      </div>
+
+      <button onclick="calcular()">Calcular Projeção</button>
+    </div>
+
+    <!-- RÉSULTATS -->
+    <div class="resultados">
+      
+      <div class="cards">
+        <div class="card" id="cardFinal">
+          <p>Patrimônio Final</p>
+          <h3 id="valorFinal">R$ 0</h3>
+        </div>
+        <div class="card investido" id="cardInvestido">
+          <p>Total Investido</p>
+          <h3 id="valorInvestido">R$ 0</h3>
+        </div>
+        <div class="card juros" id="cardJuros">
+          <p>Total em Juros (Rendimento)</p>
+          <h3 id="valorJuros" style="color: #f59e0b;">R$ 0</h3>
+        </div>
+      </div>
+
+      <!-- LES DEUX GRAPHIQUES -->
+      <div class="graficos-container" id="graficosBox">
+        <div class="grafico-box">
+          <canvas id="graficoLinha"></canvas>
+        </div>
+        <div class="grafico-box" style="max-width: 300px;">
+          <canvas id="graficoRosca"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let meuGraficoLinha = null;
+    let meuGraficoRosca = null;
+
+    function calcular() {
+      const inicial = Number(document.getElementById("valorInicial").value);
+      const aporte = Number(document.getElementById("aporteMensal").value);
+      const anos = Number(document.getElementById("periodo").value);
+      
+      const meses = anos * 12;
+      const taxaAnual = 0.10;
+      const taxaMensal = Math.pow(1 + taxaAnual, 1/12) - 1;
+      
+      // Calculs
+      const totalInvestido = inicial + (aporte * meses);
+      const montanteInicial = inicial * Math.pow(1 + taxaMensal, meses);
+      const montanteAportes = aporte * (Math.pow(1 + taxaMensal, meses) - 1) / taxaMensal;
+      const totalFinal = montanteInicial + montanteAportes;
+      const totalJuros = totalFinal - totalInvestido;
+
+      const formatar = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+
+      // Afficher les cartes et les graphiques
+      document.getElementById("cardFinal").style.display = "block"; 
+      document.getElementById("cardInvestido").style.display = "block"; 
+      document.getElementById("cardJuros").style.display = "block"; 
+      document.getElementById("graficosBox").style.display = "flex";
+
+      // Remplir les textes
+      document.getElementById("valorFinal").textContent = formatar(totalFinal);
+      document.getElementById("valorInvestido").textContent = formatar(totalInvestido);
+      document.getElementById("valorJuros").textContent = formatar(totalJuros);
+
+      // --- DONNÉES POUR LES GRAPHIQUES ---
+      const labels = [];
+      const dados = [];
+      
+      for (let ano = 0; ano <= anos; ano++) {
+        const mesesPassados = ano * 12;
+        const mInicial = inicial * Math.pow(1 + taxaMensal, mesesPassados);
+        const mAportes = aporte * (Math.pow(1 + taxaMensal, mesesPassados) - 1) / taxaMensal;
+        labels.push(ano + "a");
+        dados.push(mInicial + mAportes);
+      }
+
+      // --- GRAPHIQUE 1 : LIGNE (Évolution) ---
+      const ctx1 = document.getElementById('graficoLinha').getContext('2d');
+      if (meuGraficoLinha) meuGraficoLinha.destroy();
+
+      meuGraficoLinha = new Chart(ctx1, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Evolução do Patrimônio (R$)',
+            data: dados,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            fill: true,
+            tension: 0.4,
+            borderWidth: 3,
+            pointRadius: 0 // Enlève les points pour faire plus propre
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: '#374151' } }
+          },
+          scales: {
+            x: { ticks: { color: '#6b7280' }, grid: { display: false } },
+            y: { ticks: { color: '#6b7280' }, grid: { color: '#f3f4f6' } }
+          }
+        }
+      });
+
+      // --- GRAPHIQUE 2 : ROSCA (Répartition Investi vs Juros) ---
+      const ctx2 = document.getElementById('graficoRosca').getContext('2d');
+      if (meuGraficoRosca) meuGraficoRosca.destroy();
+
+      meuGraficoRosca = new Chart(ctx2, {
+        type: 'doughnut', // Type camembert creux
+        data: {
+          labels: ['Total Investido', 'Juros Ganhos'],
+          datasets: [{
+            data: [totalInvestido, totalJuros],
+            backgroundColor: ['#6366f1', '#f59e0b'], // Violet et Orange
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          cutout: '70%', // Rend le trou central plus grand
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#374151', padding: 20 } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
